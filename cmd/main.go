@@ -31,7 +31,10 @@ func initConfig() error {
 }
 
 func main() {
-	stopNumbers := []int{1001694, 1001212}
+	stopNumbers := []int{
+		1001694, // my house south 
+		1001212, // farragut to north
+  }
 	url := "https://api.wmata.com/NextBusService.svc/json/jPredictions?StopID=%d"
 
   if err := initConfig(); err != nil {
@@ -39,7 +42,6 @@ func main() {
   }
 
 	apiKey := viper.GetString("api.key")
-
 
 	for _, stopNumber := range stopNumbers {
 		request, _ := http.NewRequest("GET", fmt.Sprintf(url, stopNumber), nil)
@@ -67,6 +69,30 @@ func main() {
 			}
 		}
 	}
+
+
+	// metro stations
+	metroStations := []string{
+		"N04",
+		"C03",
+	}
+
+	for _, metroStation := range metroStations {
+		url = "https://api.wmata.com/StationPrediction.svc/json/GetPrediction?%s"
+ 
+		request, _ := http.NewRequest("GET", fmt.Sprintf(url, metroStation), nil)
+		request.Header.Set("Cache-Control", "no-cache")
+		request.Header.Set("api_key", apiKey)
+	
+		client := &http.Client{}
+		response, _ := client.Do(request)
+
+		defer response.Body.Close()
+	
+		body, _ := io.ReadAll(response.Body)
+		log.Printf(string(body))
+	}
+	
 }
 
 type NextBusServiceResponse struct {
