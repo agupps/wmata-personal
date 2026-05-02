@@ -78,7 +78,7 @@ func main() {
 	}
 
 	for _, metroStation := range metroStations {
-		url = "https://api.wmata.com/StationPrediction.svc/json/GetPrediction?%s"
+		url = "https://api.wmata.com/StationPrediction.svc/json/GetPrediction/%s"
  
 		request, _ := http.NewRequest("GET", fmt.Sprintf(url, metroStation), nil)
 		request.Header.Set("Cache-Control", "no-cache")
@@ -90,9 +90,36 @@ func main() {
 		defer response.Body.Close()
 	
 		body, _ := io.ReadAll(response.Body)
-		log.Printf(string(body))
+
+		var sp StationResponse 
+		err := json.Unmarshal(body, &sp)
+		if err != nil {
+			fmt.Println("%v", err)
+			return
+		}
+
+		for _, train := range sp.Trains {
+			if train.Line == "SV" {
+				fmt.Println(train)
+			}
+		} 
 	}
-	
+}
+
+type StationResponse struct {
+	Trains []TrainPrediction `json:Trains`
+}
+
+type TrainPrediction struct {
+	Cars string `json:"Car"`
+	Destination string `json:"Destination"`
+	DestinationCode string `json:"DestinationCode"`
+	DestinationName string `json:"DestinationName"`
+	Group string `json:"Group"`
+	Line string `json:"Line"`
+	LocationCode string `json:"LocationCode"`
+	LocationName string `json:"LocationName"`
+	Minutes string `json:"Min"`
 }
 
 type NextBusServiceResponse struct {
