@@ -30,16 +30,34 @@ func initConfig() error {
     return nil
 }
 
+func busStopsHandler(w http.ResponseWriter, req *http.Request) {
+	busStops()
+}
+
+func metroStopsHandler(w http.ResponseWriter, req *http.Request) {
+	metroStops()
+}
+
 func main() {
+
+	if err := initConfig(); err != nil {
+  	log.Fatalf("Failed to initialize config: %v", err)
+	}
+	// Register a handler for the root path "/"
+	http.HandleFunc("/busStops", busStopsHandler)
+  http.HandleFunc("/metroStops", metroStopsHandler)
+	// Start the server on port 8080
+	fmt.Println("Server starting on :8080...")
+	http.ListenAndServe(":8080", nil)
+}
+
+
+func busStops() {
 	stopNumbers := []int{
 		1001694, // my house south 
 		1001212, // farragut to north
   }
 	url := "https://api.wmata.com/NextBusService.svc/json/jPredictions?StopID=%d"
-
-  if err := initConfig(); err != nil {
-  	log.Fatalf("Failed to initialize config: %v", err)
-  }
 
 	apiKey := viper.GetString("api.key")
 
@@ -49,15 +67,17 @@ func main() {
 		request.Header.Set("api_key", apiKey)
 	
 		client := &http.Client{}
-		response, _ := client.Do(request)
-
+		response, err := client.Do(request)
+		if err != nil {
+			log.Fatalf("failed to hit API: %v", err)
+		}
 		defer response.Body.Close()
 
 		// Read and print the response body
 		body, _ := io.ReadAll(response.Body)
 
 		var nbs NextBusServiceResponse
-		err := json.Unmarshal(body, &nbs)
+		err = json.Unmarshal(body, &nbs)
 		if err != nil {
 			fmt.Println("%v",err)
 			return
@@ -69,30 +89,36 @@ func main() {
 			}
 		}
 	}
+}
 
-
+func metroStops() {
 	// metro stations
 	metroStations := []string{
 		"N04",
 		"C03",
 	}
 
+  fmt.Println("getting metro stations")
+	apiKey := viper.GetString("api.key")
+
 	for _, metroStation := range metroStations {
-		url = "https://api.wmata.com/StationPrediction.svc/json/GetPrediction/%s"
+		url := "https://api.wmata.com/StationPrediction.svc/json/GetPrediction/%s"
  
 		request, _ := http.NewRequest("GET", fmt.Sprintf(url, metroStation), nil)
 		request.Header.Set("Cache-Control", "no-cache")
 		request.Header.Set("api_key", apiKey)
 	
 		client := &http.Client{}
-		response, _ := client.Do(request)
-
+		response, err := client.Do(request)
+		if err != nil {
+			log.Fatalf("failed to hit API: %v", err)
+		}
 		defer response.Body.Close()
 	
 		body, _ := io.ReadAll(response.Body)
 
 		var sp StationResponse 
-		err := json.Unmarshal(body, &sp)
+		err = json.Unmarshal(body, &sp)
 		if err != nil {
 			fmt.Println("%v", err)
 			return
@@ -102,7 +128,7 @@ func main() {
 			if train.Line == "SV" {
 				fmt.Println(train)
 			}
-		} 
+		}
 	}
 }
 
@@ -132,5 +158,3 @@ type Prediction struct {
 	DirectionText string `json:"DirectionText"`
 	Minutes int `json:"Minutes"`
 }
-
-
