@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"fmt"
 	"log"
-	"io"
-	"encoding/json"
 	"github.com/spf13/viper"
+	"wmata/internal/buses"
+	"wmata/internal/metro"
 )
 
 func initConfig() error {
@@ -31,11 +31,33 @@ func initConfig() error {
 }
 
 func busStopsHandler(w http.ResponseWriter, req *http.Request) {
-	busStops()
+
+
+	log.Printf("recieving bus request")
+	stopNumbers := []int{
+		1001694, // my house south 
+		1001212, // farragut to north
+  }
+
+	printVal := ""
+
+	for _, stopNum := range stopNumbers {
+		printVal += buses.BusStops(stopNum)
+	}
+	
+	fmt.Fprintf(w, printVal)
 }
 
 func metroStopsHandler(w http.ResponseWriter, req *http.Request) {
-	metroStops()
+	fmt.Println("recieving metro request")
+	metroStations := []string{
+		"N04",
+		"C03",
+	}
+	for _, metroStation := range metroStations {
+		metro.MetroStops(metroStation)
+	}
+
 }
 
 func main() {
@@ -49,112 +71,4 @@ func main() {
 	// Start the server on port 8080
 	fmt.Println("Server starting on :8080...")
 	http.ListenAndServe(":8080", nil)
-}
-
-
-func busStops() {
-	stopNumbers := []int{
-		1001694, // my house south 
-		1001212, // farragut to north
-  }
-	url := "https://api.wmata.com/NextBusService.svc/json/jPredictions?StopID=%d"
-
-	apiKey := viper.GetString("api.key")
-
-	for _, stopNumber := range stopNumbers {
-		request, _ := http.NewRequest("GET", fmt.Sprintf(url, stopNumber), nil)
-		request.Header.Set("Cache-Control", "no-cache")
-		request.Header.Set("api_key", apiKey)
-	
-		client := &http.Client{}
-		response, err := client.Do(request)
-		if err != nil {
-			log.Fatalf("failed to hit API: %v", err)
-		}
-		defer response.Body.Close()
-
-		// Read and print the response body
-		body, _ := io.ReadAll(response.Body)
-
-		var nbs NextBusServiceResponse
-		err = json.Unmarshal(body, &nbs)
-		if err != nil {
-			fmt.Println("%v",err)
-			return
-		}
-
-		for _, prediction := range nbs.Predictions {
-			if prediction.RouteID == "D72" {
-				fmt.Println(prediction)
-			}
-		}
-	}
-}
-
-func metroStops() {
-	// metro stations
-	metroStations := []string{
-		"N04",
-		"C03",
-	}
-
-  fmt.Println("getting metro stations")
-	apiKey := viper.GetString("api.key")
-
-	for _, metroStation := range metroStations {
-		url := "https://api.wmata.com/StationPrediction.svc/json/GetPrediction/%s"
- 
-		request, _ := http.NewRequest("GET", fmt.Sprintf(url, metroStation), nil)
-		request.Header.Set("Cache-Control", "no-cache")
-		request.Header.Set("api_key", apiKey)
-	
-		client := &http.Client{}
-		response, err := client.Do(request)
-		if err != nil {
-			log.Fatalf("failed to hit API: %v", err)
-		}
-		defer response.Body.Close()
-	
-		body, _ := io.ReadAll(response.Body)
-
-		var sp StationResponse 
-		err = json.Unmarshal(body, &sp)
-		if err != nil {
-			fmt.Println("%v", err)
-			return
-		}
-
-		for _, train := range sp.Trains {
-			if train.Line == "SV" {
-				fmt.Println(train)
-			}
-		}
-	}
-}
-
-type StationResponse struct {
-	Trains []TrainPrediction `json:Trains`
-}
-
-type TrainPrediction struct {
-	Cars string `json:"Car"`
-	Destination string `json:"Destination"`
-	DestinationCode string `json:"DestinationCode"`
-	DestinationName string `json:"DestinationName"`
-	Group string `json:"Group"`
-	Line string `json:"Line"`
-	LocationCode string `json:"LocationCode"`
-	LocationName string `json:"LocationName"`
-	Minutes string `json:"Min"`
-}
-
-type NextBusServiceResponse struct {
-	StopName string `json:"StopName"`
-	Predictions []Prediction `json:"Predictions"`
-}
-
-type Prediction struct {
-	RouteID string `json:"RouteID"`
-	DirectionText string `json:"DirectionText"`
-	Minutes int `json:"Minutes"`
 }
