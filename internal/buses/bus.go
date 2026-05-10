@@ -48,15 +48,6 @@ func BusStops(stopNumber int) string {
 	return transit.PredictionsToString(d72Predictions)
 }
 
-//func predictionsToString(predictions []*BusPrediction) string {
-	//out := ""
-	//for _, p := range predictions {
-	//	out += p.GetPrediction()
-	//}
-	//return out
-//}
-
-
 type NextBusServiceResponse struct {
 	StopName string `json:"StopName"`
 	Predictions []*BusPrediction `json:"Predictions"`
