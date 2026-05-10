@@ -34,15 +34,17 @@ func busStopsHandler(w http.ResponseWriter, req *http.Request) {
 
 
 	log.Printf("recieving bus request")
-	stopNumbers := []int{
-		1001694, // my house south 
-		1001212, // farragut to north
+	stopNumbers := map[int]string{
+		1001694: "my home", // my house south 
+		1001212: "farragut", // farragut to north
   }
 
 	printVal := ""
 
-	for _, stopNum := range stopNumbers {
+	for stopNum, stopName:= range stopNumbers {
+		printVal += fmt.Sprintf("%s\n", stopName)
 		printVal += buses.BusStops(stopNum)
+		printVal += "\n"
 	}
 	
 	fmt.Fprintf(w, printVal)
@@ -50,14 +52,18 @@ func busStopsHandler(w http.ResponseWriter, req *http.Request) {
 
 func metroStopsHandler(w http.ResponseWriter, req *http.Request) {
 	fmt.Println("recieving metro request")
-	metroStations := []string{
-		"N04",
-		"C03",
-	}
-	for _, metroStation := range metroStations {
-		metro.MetroStops(metroStation)
+	metroStations := map[string]string{
+		"N04": "Spring Hill",
+		"C03": "Farragut West",
 	}
 
+	printVal := ""
+	for metroCode, metroStation := range metroStations {
+		printVal += fmt.Sprintf("%s\n", metroStation)
+		printVal += metro.MetroStops(metroCode)
+		printVal += "\n"
+	}
+	fmt.Fprintf(w, printVal)
 }
 
 func main() {

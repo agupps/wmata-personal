@@ -37,24 +37,24 @@ func BusStops(stopNumber int) string {
 		return ""
 	}
 
-	d72Predictions := []BusPrediction{}
+	d72Predictions := []transit.Prediction{}
 
 	for _, prediction := range nbs.Predictions {
 		if prediction.RouteID == "D72" {
-			d72Predictions = append(d72Predictions, *prediction)
+			d72Predictions = append(d72Predictions, prediction)
 		}
 	}
 
 	return transit.PredictionsToString(d72Predictions)
 }
 
-func predictionsToString(predictions []*BusPrediction) string {
-	out := ""
-	for _, p := range predictions {
-		out += p.GetPrediction()
-	}
-	return out
-}
+//func predictionsToString(predictions []*BusPrediction) string {
+	//out := ""
+	//for _, p := range predictions {
+	//	out += p.GetPrediction()
+	//}
+	//return out
+//}
 
 
 type NextBusServiceResponse struct {
@@ -80,7 +80,7 @@ func (b *BusPrediction) GetRouteID() string {
 	return b.RouteID;
 }
 
-func (b *BusPrediction) GetPrediction() string {
+func (b BusPrediction) GetPrediction() string {
   return fmt.Sprintf("%s %s: %d\n", b.RouteID, b.DirectionText, b.Minutes)
 }
 

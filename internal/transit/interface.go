@@ -2,9 +2,9 @@ package transit
 
 
 type Prediction interface {
-	GetMinutes() string
-	GetRouteID() string
+	GetMinutes() string	
 	GetDirectionText() string
+	GetRouteID() string
 	GetPrediction() string
 }
 

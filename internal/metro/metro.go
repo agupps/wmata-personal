@@ -37,11 +37,11 @@ func MetroStops(metroStop string) string {
 		return ""
 	}
 
-	silverLineTrainPredictions := []TrainPrediction{}
+	silverLineTrainPredictions := []transit.Prediction{}
 
 	for _, train := range sp.Trains {
 		if train.Line == "SV" {
-			silverLineTrainPredictions = append(silverLineTrainPredictions, *train)
+			silverLineTrainPredictions = append(silverLineTrainPredictions, train)
 		}
 	}
 	return transit.PredictionsToString(silverLineTrainPredictions)
@@ -67,7 +67,7 @@ func (t *TrainPrediction) GetMinutes() string {
 	return t.Minutes
 }
 
-func (t *TrainPrediction) GetDestinationText() string {
+func (t *TrainPrediction) GetDirectionText() string {
 	return t.DestinationName
 }
 
@@ -75,7 +75,7 @@ func (t *TrainPrediction) GetRouteID() string {
 	return t.Line
 }
 
-func (t *TrainPrediction) GetPrediction() string {
+func (t TrainPrediction) GetPrediction() string {
   return fmt.Sprintf("%s to %s: %s\n", t.Line, t.DestinationName, t.Minutes)
 }
 
