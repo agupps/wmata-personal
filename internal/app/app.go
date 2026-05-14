@@ -4,10 +4,12 @@ import (
 	"net/http"
 	"fmt"
 	"log/slog"
+	"encoding/json"
 	"os"
 	"github.com/spf13/viper"
 	"wmata/internal/buses"
 	"wmata/internal/metro"
+	"wmata/internal/transit"
 )
 
 type App struct {}
@@ -34,18 +36,25 @@ func (a *App) Run() int {
 }
 
 func metroStopsHandler(w http.ResponseWriter, req *http.Request) {
-	metroStations := map[string]string{
-		"N04": "Spring Hill",
-		"C03": "Farragut West",
+	var metroStations []string
+	if req.URL.Query().Has("stop") {
+		metroStations = []string{req.URL.Query().Get("stop")}
+	} else {	
+		metroStations = []string{
+			"N04", // Spring Hill
+			"C03", // Farragut West
+		}
 	}
 
-	printVal := ""
-	for metroCode, metroStation := range metroStations {
-		printVal += fmt.Sprintf("%s\n", metroStation)
-		printVal += metro.MetroStops(metroCode)
-		printVal += "\n"
+	metroResponse := []transit.Prediction{}
+	for _, metroCode := range metroStations {
+		metroResponse = append(metroResponse, metro.MetroStops(metroCode)...)
 	}
-	fmt.Fprintf(w, printVal)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(metroResponse); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func busStopsHandler(w http.ResponseWriter, req *http.Request) {

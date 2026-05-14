@@ -10,7 +10,7 @@ import (
 	"wmata/internal/transit"
 )
 
-func MetroStops(metroStop string) string {
+func MetroStops(metroStop string) []transit.Prediction{
 	// metro stations
   
 	apiKey := viper.GetString("api.key")
@@ -34,7 +34,7 @@ func MetroStops(metroStop string) string {
 	err = json.Unmarshal(body, &sp)
 	if err != nil {
 		fmt.Println("%v", err)
-		return ""
+		return nil 
 	}
 
 	silverLineTrainPredictions := []transit.Prediction{}
@@ -44,7 +44,7 @@ func MetroStops(metroStop string) string {
 			silverLineTrainPredictions = append(silverLineTrainPredictions, train)
 		}
 	}
-	return transit.PredictionsToString(silverLineTrainPredictions)
+	return silverLineTrainPredictions
 }
 
 type StationResponse struct {
