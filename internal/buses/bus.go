@@ -6,19 +6,17 @@ import (
 	"log"
 	"io"
 	"encoding/json"
-	"github.com/spf13/viper"
 	"wmata/internal/transit"
+	"wmata/internal/config"
 )
 
 
-func BusStops(stopNumber int) string {
+func BusStops(stopNumber int, config *config.Config) []transit.Prediction {
 	url := "https://api.wmata.com/NextBusService.svc/json/jPredictions?StopID=%d"
-
-	apiKey := viper.GetString("api.key")
 
 	request, _ := http.NewRequest("GET", fmt.Sprintf(url, stopNumber), nil)
 	request.Header.Set("Cache-Control", "no-cache")
-	request.Header.Set("api_key", apiKey)
+	request.Header.Set("api_key", config.Api.Key)
 
 	client := &http.Client{}
 	response, err := client.Do(request)
@@ -34,7 +32,7 @@ func BusStops(stopNumber int) string {
 	err = json.Unmarshal(body, &nbs)
 	if err != nil {
 		fmt.Println("%v",err)
-		return ""
+		return nil 
 	}
 
 	d72Predictions := []transit.Prediction{}
@@ -45,7 +43,7 @@ func BusStops(stopNumber int) string {
 		}
 	}
 
-	return transit.PredictionsToString(d72Predictions)
+	return d72Predictions
 }
 
 type NextBusServiceResponse struct {

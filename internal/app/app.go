@@ -2,32 +2,36 @@ package app
 
 import (
 	"net/http"
-	"fmt"
+  "strconv"
 	"log/slog"
 	"encoding/json"
 	"os"
-	"github.com/spf13/viper"
 	"wmata/internal/buses"
 	"wmata/internal/metro"
 	"wmata/internal/transit"
+	"wmata/internal/config"
 )
 
-type App struct {}
+type App struct {
+	config *config.Config
+}
 
 func New() *App {
-	return &App{}
+	c := &config.Config{}
+	if err := c.Parse(); err != nil {
+		panic(err)
+	}
+	return &App{
+		config: c,
+	}
 }
 
 func (a *App) Run() int {  
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	if err := initConfig(); err != nil {
-  	logger.Error("Failed to initialize config", "error", err)
-		return 1
-	}
-	logger.Info("config file successful")
+	logger.Info("config load success")
 	// Register a handler for the root path "/"
-	http.HandleFunc("/busStops", busStopsHandler)
-  http.HandleFunc("/metroStops", metroStopsHandler)
+	http.HandleFunc("/busStops", a.busStopsHandler)
+  http.HandleFunc("/metroStops", a.metroStopsHandler)
 	// Start the server on port 8080
 	logger.Info("server starting on :8080...")
 	http.ListenAndServe(":8080", nil)
@@ -35,7 +39,7 @@ func (a *App) Run() int {
 	return 0
 }
 
-func metroStopsHandler(w http.ResponseWriter, req *http.Request) {
+func (a *App) metroStopsHandler(w http.ResponseWriter, req *http.Request) {
 	var metroStations []string
 	if req.URL.Query().Has("stop") {
 		metroStations = []string{req.URL.Query().Get("stop")}
@@ -48,7 +52,7 @@ func metroStopsHandler(w http.ResponseWriter, req *http.Request) {
 
 	metroResponse := []transit.Prediction{}
 	for _, metroCode := range metroStations {
-		metroResponse = append(metroResponse, metro.MetroStops(metroCode)...)
+		metroResponse = append(metroResponse, metro.MetroStops(metroCode, a.config)...)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -57,35 +61,32 @@ func metroStopsHandler(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func busStopsHandler(w http.ResponseWriter, req *http.Request) {
-	stopNumbers := map[int]string{
-		1001694: "my home", // my house south 
-		1001212: "farragut", // farragut to north
-  }
-
-	printVal := ""
-
-	for stopNum, stopName:= range stopNumbers {
-		printVal += fmt.Sprintf("%s\n", stopName)
-		printVal += buses.BusStops(stopNum)
-		printVal += "\n"
+func (a *App) busStopsHandler(w http.ResponseWriter, req *http.Request) {
+	var busStops []int
+	if req.URL.Query().Has("stop") {
+		stopNum, err := strconv.Atoi(req.URL.Query().Get("stop"))
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+      w.WriteHeader(http.StatusBadRequest)
+      json.NewEncoder(w).Encode(map[string]string{"error": "Invalid input"})
+			return
+		}
+		busStops = []int{stopNum}
+	} else {	
+		busStops = []int{
+			1001694, // home 
+			1001212, // farragut sq 
+		}
 	}
-	
-	fmt.Fprintf(w, printVal)
-}
 
-func initConfig() error {
-    viper.SetConfigName("config")
-    viper.SetConfigType("yaml")
-
-    viper.AddConfigPath(".")
-		viper.AddConfigPath("..")          
-
-    // Read the config file
-    if err := viper.ReadInConfig(); err != nil {
-        return fmt.Errorf("error reading config file: %w", err)
-    }
-
-    return nil
+	busResponse := []transit.Prediction{}
+	for _, busStopNum := range busStops {
+		busResponse = append(busResponse, buses.BusStops(busStopNum, a.config)...)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(busResponse); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
