@@ -6,20 +6,17 @@ import (
 	"log"
 	"io"
 	"encoding/json"
-	"github.com/spf13/viper"
 	"wmata/internal/transit"
+	"wmata/internal/config"
 )
 
-func MetroStops(metroStop string) []transit.Prediction{
+func MetroStops(metroStop string, config *config.Config) []transit.Prediction{
 	// metro stations
-  
-	apiKey := viper.GetString("api.key")
-
 	url := "https://api.wmata.com/StationPrediction.svc/json/GetPrediction/%s"
 
 	request, _ := http.NewRequest("GET", fmt.Sprintf(url, metroStop), nil)
 	request.Header.Set("Cache-Control", "no-cache")
-	request.Header.Set("api_key", apiKey)
+	request.Header.Set("api_key", config.Api.Key)
 
 	client := &http.Client{}
 	response, err := client.Do(request)
