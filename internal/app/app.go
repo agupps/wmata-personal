@@ -79,9 +79,11 @@ func (a *App) busStopsHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	d72 := "D72"
+
 	busResponse := []transit.Prediction{}
 	for _, busStopNum := range busStops {
-		busResponse = append(busResponse, buses.BusStops(busStopNum, a.config)...)
+		busResponse = append(busResponse, buses.BusStops(busStopNum, a.config, &d72)...)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

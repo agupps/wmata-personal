@@ -6,12 +6,13 @@ import (
 	"log"
 	"io"
 	"encoding/json"
+	"github.com/samber/lo"
 	"wmata/internal/transit"
 	"wmata/internal/config"
 )
 
 
-func BusStops(stopNumber int, config *config.Config) []transit.Prediction {
+func BusStops(stopNumber int, config *config.Config, busLineFilter *string) []transit.Prediction {
 	url := "https://api.wmata.com/NextBusService.svc/json/jPredictions?StopID=%d"
 
 	request, _ := http.NewRequest("GET", fmt.Sprintf(url, stopNumber), nil)
@@ -35,15 +36,17 @@ func BusStops(stopNumber int, config *config.Config) []transit.Prediction {
 		return nil 
 	}
 
-	d72Predictions := []transit.Prediction{}
+	transitPredictions := make([]transit.Prediction, len(nbs.Predictions))
 
-	for _, prediction := range nbs.Predictions {
-		if prediction.RouteID == "D72" {
-			d72Predictions = append(d72Predictions, prediction)
-		}
-	}
+	for i, prediction := range nbs.Predictions {
+		transitPredictions[i] = prediction
+	} 
 
-	return d72Predictions
+	//filterFunc := func()
+
+	return lo.Filter(transitPredictions, func(p transit.Prediction, _ int) bool {
+		return p.GetRouteID() == *busLineFilter
+	})
 }
 
 type NextBusServiceResponse struct {
