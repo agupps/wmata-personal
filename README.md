@@ -27,3 +27,11 @@ To build
 npm run build
 ```
 
+
+Backlog:
+
+Make API endpoint configurable via environment variable - right now the front end hits localhost LOL
+Add openAPI spec
+Add a database and a poller to populater
+Make front end nice, would be cool to make the front end have it configurable which station to hit
+Add more API endpoints configurability for the different options and stuffs
