@@ -8,7 +8,6 @@ type ApiResponse = {
 
 function App() {
   const [data, setData] = useState<ApiResponse | null>(null);
-  const [count, setCount] = useState(0)
 
   useEffect(() => {
     fetch("http://localhost:8080/busStops")
