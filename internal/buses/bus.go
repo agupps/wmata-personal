@@ -12,7 +12,7 @@ import (
 )
 
 
-func BusStops(stopNumber int, config *config.Config, busLineFilter *string) []transit.Prediction {
+func BusStops(stopNumber int, config *config.Config, busLineFilter []string) []transit.Prediction {
 	url := "https://api.wmata.com/NextBusService.svc/json/jPredictions?StopID=%d"
 
 	request, _ := http.NewRequest("GET", fmt.Sprintf(url, stopNumber), nil)
@@ -42,10 +42,8 @@ func BusStops(stopNumber int, config *config.Config, busLineFilter *string) []tr
 		transitPredictions[i] = prediction
 	} 
 
-	//filterFunc := func()
-
 	return lo.Filter(transitPredictions, func(p transit.Prediction, _ int) bool {
-		return p.GetRouteID() == *busLineFilter
+		return lo.Contains(busLineFilter, p.GetRouteID()) 
 	})
 }
 
