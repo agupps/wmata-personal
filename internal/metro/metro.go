@@ -6,11 +6,12 @@ import (
 	"log"
 	"io"
 	"encoding/json"
+	"github.com/samber/lo"
 	"wmata/internal/transit"
 	"wmata/internal/config"
 )
 
-func MetroStops(metroStop string, config *config.Config) []transit.Prediction{
+func MetroStops(metroStop string, lines []string, config *config.Config) []transit.Prediction{
 	// metro stations
 	url := "https://api.wmata.com/StationPrediction.svc/json/GetPrediction/%s"
 
@@ -34,14 +35,14 @@ func MetroStops(metroStop string, config *config.Config) []transit.Prediction{
 		return nil 
 	}
 
-	silverLineTrainPredictions := []transit.Prediction{}
+	 trainPredictions := []transit.Prediction{}
 
 	for _, train := range sp.Trains {
-		if train.Line == "SV" {
-			silverLineTrainPredictions = append(silverLineTrainPredictions, train)
+		if lo.Contains(lines, train.Line) {
+			trainPredictions = append(trainPredictions, train)
 		}
 	}
-	return silverLineTrainPredictions
+	return trainPredictions 
 }
 
 type StationResponse struct {
@@ -49,11 +50,11 @@ type StationResponse struct {
 }
 
 type TrainPrediction struct {
-	Cars string `json:"Car"`
-	Destination string `json:"Destination"`
+	//Cars string `json:"Car"`
+	//Destination string `json:"Destination"`
 	DestinationCode string `json:"DestinationCode"`
 	DestinationName string `json:"DestinationName"`
-	Group string `json:"Group"`
+	//Group string `json:"Group"`
 	Line string `json:"Line"`
 	LocationCode string `json:"LocationCode"`
 	LocationName string `json:"LocationName"`

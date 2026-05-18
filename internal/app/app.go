@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"encoding/json"
 	"os"
+	"github.com/rs/cors"
 	"wmata/internal/buses"
 	"wmata/internal/metro"
 	"wmata/internal/transit"
@@ -33,8 +34,11 @@ func (a *App) Run() int {
 	http.HandleFunc("/busStops", a.busStopsHandler)
   http.HandleFunc("/metroStops", a.metroStopsHandler)
 	// Start the server on port 8080
+	
 	logger.Info("server starting on :8080...")
-	http.ListenAndServe(":8080", nil)
+	
+	handler := cors.Default().Handler(http.DefaultServeMux)
+	http.ListenAndServe(":8080", handler)
 
 	return 0
 }
@@ -49,10 +53,19 @@ func (a *App) metroStopsHandler(w http.ResponseWriter, req *http.Request) {
 			"C03", // Farragut West
 		}
 	}
+	var lines []string
+	if req.URL.Query().Has("line") {
+		lines = []string{req.URL.Query().Get("line")}
+	} else {
+		
+		lines = []string{
+			"SV",
+		}
+	}
 
 	metroResponse := []transit.Prediction{}
 	for _, metroCode := range metroStations {
-		metroResponse = append(metroResponse, metro.MetroStops(metroCode, a.config)...)
+		metroResponse = append(metroResponse, metro.MetroStops(metroCode, lines, a.config)...)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -78,12 +91,18 @@ func (a *App) busStopsHandler(w http.ResponseWriter, req *http.Request) {
 			1001212, // farragut sq 
 		}
 	}
-
-	d72 := "D72"
+	var lines []string
+	if req.URL.Query().Has("line") {
+		lines = []string{req.URL.Query().Get("line")}
+	} else {
+		lines = []string{
+			"D72",
+		}
+	}
 
 	busResponse := []transit.Prediction{}
 	for _, busStopNum := range busStops {
-		busResponse = append(busResponse, buses.BusStops(busStopNum, a.config, &d72)...)
+		busResponse = append(busResponse, buses.BusStops(busStopNum, a.config, lines)...)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
